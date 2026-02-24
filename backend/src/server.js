@@ -4,6 +4,14 @@ import { env } from "./config/env.js";
 import { connectDB } from "./config/db.js";
 import { setupSocket } from "./sockets/socketServer.js";
 
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception:", error);
+});
+
 async function start() {
   await connectDB();
 
@@ -16,6 +24,6 @@ async function start() {
 }
 
 start().catch((error) => {
-  console.error("Failed to start server", error);
+  console.error("Failed to start server:", error?.message || error);
   process.exit(1);
 });

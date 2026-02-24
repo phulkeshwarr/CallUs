@@ -1,104 +1,96 @@
-# Vercel Deployment Guide
+# Vercel Deployment Guide (Frontend) + Render Deployment Guide (Backend)
 
-This project should be deployed as:
+Deploy this project in 2 parts:
 
-- Frontend (`frontend`) on Vercel
-- Backend (`backend`) on a Node host that supports persistent connections (Render, Railway, Fly.io, VPS, etc.)
+- Frontend (`frontend`) -> Vercel
+- Backend (`backend`) -> Render
 
-Reason: this app uses Socket.IO for WebRTC signaling, and Vercel Functions cannot act as a WebSocket server.
+Do not deploy backend to Vercel for this app. Socket.IO signaling needs a long-running Node server.
 
-## 1. Deploy the backend first
+## 1. Deploy backend on Render
 
-Deploy the `backend` directory to Render/Railway (or equivalent) with:
+Create a **Web Service** and set:
 
-- Build command: `npm install`
-- Start command: `npm start`
-- Root directory: `backend`
+- Root Directory: `backend`
+- Build Command: `npm install`
+- Start Command: `npm start`
 
-Set backend environment variables:
+Set these environment variables in Render:
 
 ```env
 NODE_ENV=production
 PORT=5000
-MONGO_URI=<mongodb-atlas-or-hosted-uri>
-JWT_SECRET=<strong-random-secret>
+MONGO_URI=<your-mongodb-uri>
+JWT_SECRET=<your-strong-secret>
 JWT_EXPIRES_IN=7d
-CLIENT_URL=https://<your-vercel-domain>
-CLIENT_URLS=https://<your-vercel-domain>,https://<your-project>-git-*.vercel.app
+CLIENT_URL=https://frontend-red-nine-77.vercel.app
+CLIENT_URLS=https://frontend-red-nine-77.vercel.app,https://frontend-red-nine-77-git-*.vercel.app
 ```
 
-Notes:
+Remove these from backend env if present:
 
-- `CLIENT_URL` is required.
-- `CLIENT_URLS` supports comma-separated values and wildcard patterns.
-- If you do not need preview deployments, keep `CLIENT_URLS` to only your production domain.
+- `VITE_API_URL`
+- `VITE_SOCKET_URL`
 
-After deployment, copy your backend base URL (example: `https://callio-api.onrender.com`).
+Backend health check:
 
-## 2. Deploy the frontend to Vercel
+`https://callus-pgo1.onrender.com/api/health`
 
-### Option A: Vercel Dashboard
+Expected:
 
-1. Push this repo to GitHub/GitLab/Bitbucket.
-2. In Vercel, click `Add New -> Project`.
-3. Import this repository.
-4. Configure:
-   - Framework Preset: `Vite`
-   - Root Directory: `frontend`
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-5. Add Environment Variables:
-   - `VITE_API_URL=https://<backend-domain>/api`
-   - `VITE_SOCKET_URL=https://<backend-domain>`
-6. Click `Deploy`.
-
-### Option B: Vercel CLI
-
-```bash
-cd frontend
-npm i -g vercel
-vercel login
-vercel
+```json
+{"status":"ok"}
 ```
 
-Set env vars in Vercel project settings (or CLI), then deploy production:
+## 2. Deploy frontend on Vercel
 
-```bash
-vercel --prod
-```
+Create Vercel project with:
 
-## 3. Update backend CORS after first frontend deploy
+- Framework: `Vite`
+- Root Directory: `frontend`
+- Install Command: `npm install`
+- Build Command: `npm run build`
+- Output Directory: `dist`
 
-Once Vercel gives your real domain (for example `https://callio.vercel.app`), update backend:
+Set frontend environment variables in Vercel:
 
 ```env
-CLIENT_URL=https://callio.vercel.app
-CLIENT_URLS=https://callio.vercel.app,https://callio-git-*.vercel.app
+VITE_API_URL=https://callus-pgo1.onrender.com/api
+VITE_SOCKET_URL=https://callus-pgo1.onrender.com
 ```
 
-Redeploy/restart backend so CORS and Socket.IO origin checks are refreshed.
+Redeploy frontend after saving env vars.
 
-## 4. Final verification
+## 3. Correct deployment order
 
-1. Open the deployed frontend.
-2. Register/login two different users in two browser sessions.
+1. Deploy backend on Render.
+2. Confirm backend health URL works.
+3. Set Vercel env vars to Render backend URL.
+4. Deploy frontend on Vercel.
+5. Ensure Render `CLIENT_URL` and `CLIENT_URLS` point to your Vercel domain.
+6. Redeploy backend once after URL changes.
+
+## 4. Post-deploy testing
+
+1. Open `https://frontend-red-nine-77.vercel.app`.
+2. Login with two different users in two browser sessions.
 3. Confirm both users show `Online`.
-4. Test `Audio` and `Video` calls.
+4. Test audio call.
+5. Test video call.
 
-## 5. Troubleshooting
+## 5. Common errors
 
+- `FUNCTION_INVOCATION_FAILED` on Vercel:
+  - backend was deployed to Vercel instead of Render.
+- `Missing required environment variable: CLIENT_URL` on Render:
+  - `CLIENT_URL` not set.
 - `Realtime connection unavailable`:
-  - `VITE_SOCKET_URL` is wrong, backend is down, or backend CORS is missing your Vercel origin.
-- API `401` loops:
+  - wrong `VITE_SOCKET_URL` or backend is down.
+- API 401 loops:
   - stale token in browser storage; logout/login again.
-- Video call fails but audio works:
-  - camera permission/device issue; test on separate devices/cameras.
-- No incoming popup:
-  - verify both sessions are different logged-in users and both show online.
 
-## 6. Reference docs
+## 6. References
 
-- Vercel Vite framework docs: https://vercel.com/docs/frameworks/frontend/vite
-- Vercel build/root directory settings: https://vercel.com/docs/deployments/configure-a-build
-- Vercel environment variables: https://vercel.com/docs/environment-variables
-- Vercel limits (WebSocket note): https://vercel.com/docs/platform/limits
+- Vercel + Vite: https://vercel.com/docs/frameworks/frontend/vite
+- Vercel env vars: https://vercel.com/docs/environment-variables
+- Render web services: https://render.com/docs/web-services
