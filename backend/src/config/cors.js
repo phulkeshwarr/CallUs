@@ -1,11 +1,19 @@
 import { env } from "./env.js";
 
+function normalizeOrigin(value) {
+  if (!value) {
+    return "";
+  }
+  return value.trim().replace(/\/+$/, "");
+}
+
 function isLocalDevOrigin(origin) {
-  if (!origin) {
+  const normalized = normalizeOrigin(origin);
+  if (!normalized) {
     return false;
   }
 
-  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized);
 }
 
 function escapeRegex(value) {
@@ -13,18 +21,21 @@ function escapeRegex(value) {
 }
 
 function matchesConfiguredOrigin(origin, configured) {
-  if (!configured) {
+  const normalizedOrigin = normalizeOrigin(origin);
+  const normalizedConfigured = normalizeOrigin(configured);
+
+  if (!normalizedConfigured || !normalizedOrigin) {
     return false;
   }
 
-  if (configured === origin) {
+  if (normalizedConfigured === normalizedOrigin) {
     return true;
   }
 
   // Supports wildcard patterns like https://your-app-git-*.vercel.app
-  if (configured.includes("*")) {
-    const pattern = `^${configured.split("*").map(escapeRegex).join(".*")}$`;
-    return new RegExp(pattern).test(origin);
+  if (normalizedConfigured.includes("*")) {
+    const pattern = `^${normalizedConfigured.split("*").map(escapeRegex).join(".*")}$`;
+    return new RegExp(pattern).test(normalizedOrigin);
   }
 
   return false;
