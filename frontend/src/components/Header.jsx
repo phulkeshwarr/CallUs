@@ -29,7 +29,9 @@ export function Header() {
       <div className="header-right">
         <div className="header-user-info">
           <span className="user-flag">{flag}</span>
-          <span className="user-name">{user?.name}</span>
+          <span className="user-name" title={user?.name}>
+            {user?.name?.length > 7 ? user.name.slice(0, 7) + ".." : user?.name}
+          </span>
           <span className="header-user-id">#{user?.userId}</span>
         </div>
 

@@ -123,8 +123,8 @@ export function UserList() {
             </div>
 
             <div className="user-info">
-              <h4>
-                {user.name}
+              <h4 title={user.name}>
+                {user.name.length > 7 ? user.name.slice(0, 7) + ".." : user.name}
               </h4>
               <div className="user-meta">
                 <span className="uid" style={{ marginRight: 6 }}>#{user.userId}</span>
