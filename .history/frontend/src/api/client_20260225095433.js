@@ -7,7 +7,7 @@ export const api = axios.create({
   baseURL: API_URL,
 });
 
-api.interceptors.response.use(  //interceptors are functions that are called before a request is sent or after a response is received. They can be used to modify the request or response, or to handle errors.
+api.interceptors.response.use(  //intercep
   (response) => response,
   (error) => {
     const status = error?.response?.status;
@@ -18,7 +18,7 @@ api.interceptors.response.use(  //interceptors are functions that are called bef
       unauthorizedHandler?.();
     }
 
-    return Promise.reject(error); // promise is an object that represents the eventual completion (or failure) of an asynchronous operation and its resulting value. In this case, we are rejecting the promise with the error object, which allows us to handle the error in the calling code using .catch() or try/catch with async/await.
+    return Promise.reject(error);
   }
 );
 

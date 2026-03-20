@@ -3,12 +3,17 @@ import { useAuth } from "./context/AuthContext";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ChatLinkPage } from "./pages/ChatLinkPage";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <p className="screen-center">Loading...</p>;
+    return (
+      <div className="screen-center">
+        <div className="loading-spinner" />
+      </div>
+    );
   }
 
   if (!user) {
@@ -23,6 +28,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/chat/:userId" element={<ChatLinkPage />} />
       <Route
         path="/"
         element={

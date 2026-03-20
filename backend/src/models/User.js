@@ -1,6 +1,18 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+async function generateUniqueUserId() {
+  let attempts = 0;
+  while (attempts < 20) {
+    const id = String(Math.floor(100000 + Math.random() * 900000));
+    const exists = await mongoose.models.User?.findOne({ userId: id });
+    if (!exists) return id;
+    attempts++;
+  }
+  // Fallback: timestamp-based
+  return String(Date.now()).slice(-6);
+}
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -23,11 +35,23 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false,
     },
+    country: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    userId: {
+      type: String,
+      unique: true,
+    },
   },
   { timestamps: true }
 );
 
 userSchema.pre("save", async function save(next) {
+  if (this.isNew && !this.userId) {
+    this.userId = await generateUniqueUserId();
+  }
   if (!this.isModified("password")) {
     return next();
   }

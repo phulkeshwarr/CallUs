@@ -1,5 +1,6 @@
 const onlineUsers = new Map();
 const callSessions = new Map();
+const busyUsers = new Set(); // Set of userIds who are currently in a call
 
 export function setUserOnline(userId, socketId) {
   if (!onlineUsers.has(userId)) {
@@ -18,6 +19,7 @@ export function setUserOfflineSocket(userId, socketId) {
 
   if (sockets.size === 0) {
     onlineUsers.delete(userId);
+    busyUsers.delete(userId); // remove from busy when completely offline
   }
 }
 
@@ -35,6 +37,10 @@ export function getUserSocketIds(userId) {
 
 export function setCallSession(callId, session) {
   callSessions.set(callId, session);
+  
+  // Set both users as busy
+  if (session.from) busyUsers.add(session.from);
+  if (session.to) busyUsers.add(session.to);
 }
 
 export function getCallSession(callId) {
@@ -42,7 +48,23 @@ export function getCallSession(callId) {
 }
 
 export function deleteCallSession(callId) {
+  const session = callSessions.get(callId);
   callSessions.delete(callId);
+
+  // Recalculate busy status for both users involved
+  if (session) {
+    [session.from, session.to].forEach((userId) => {
+      if (userId) {
+        // Find if this user is in any other active call session
+        const hasOtherCalls = Array.from(callSessions.values()).some(
+          (s) => s.from === userId || s.to === userId
+        );
+        if (!hasOtherCalls) {
+          busyUsers.delete(userId);
+        }
+      }
+    });
+  }
 }
 
 export function findUserCallIds(userId) {
@@ -53,4 +75,8 @@ export function findUserCallIds(userId) {
     }
   }
   return callIds;
+}
+
+export function getBusyUserIds() {
+  return new Set(busyUsers);
 }

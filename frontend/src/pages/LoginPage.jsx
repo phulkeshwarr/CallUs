@@ -27,27 +27,38 @@ export function LoginPage() {
   return (
     <main className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h2>Login</h2>
+        <div className="auth-brand">
+          <h1>Call.io</h1>
+          <p>Anonymous calling & chat</p>
+        </div>
+
+        <h2>Welcome Back</h2>
+
         <input
+          id="login-email"
           type="email"
-          placeholder="Email"
+          placeholder="Email address"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           required
         />
         <input
+          id="login-password"
           type="password"
           placeholder="Password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           required
         />
+
         {error && <p className="error">{error}</p>}
-        <button className="btn btn-primary" disabled={submitting} type="submit">
-          {submitting ? "Signing in..." : "Login"}
+
+        <button id="login-submit" className="btn btn-primary" disabled={submitting} type="submit">
+          {submitting ? "Signing in..." : "Sign In"}
         </button>
+
         <p>
-          No account? <Link to="/register">Register</Link>
+          Don't have an account? <Link to="/register">Create one</Link>
         </p>
       </form>
     </main>

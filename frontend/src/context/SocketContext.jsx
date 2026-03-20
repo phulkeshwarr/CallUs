@@ -8,12 +8,14 @@ export function SocketProvider({ children }) {
   const { token } = useAuth();
   const [socket, setSocket] = useState(null);
   const [onlineUserIds, setOnlineUserIds] = useState([]);
+  const [busyUserIds, setBusyUserIds] = useState([]);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
 
   useEffect(() => {
     if (!token) {
       setIsSocketConnected(false);
       setOnlineUserIds([]);
+      setBusyUserIds([]);
       setSocket((existing) => {
         existing?.disconnect();
         return null;
@@ -32,19 +34,23 @@ export function SocketProvider({ children }) {
     instance.on("disconnect", () => {
       setIsSocketConnected(false);
       setOnlineUserIds([]);
+      setBusyUserIds([]);
     });
 
     instance.on("connect_error", () => {
       setIsSocketConnected(false);
       setOnlineUserIds([]);
+      setBusyUserIds([]);
     });
 
-    instance.on("presence:bootstrap", ({ onlineUserIds: ids }) => {
-      setOnlineUserIds(ids || []);
+    instance.on("presence:bootstrap", ({ onlineUserIds: online, busyUserIds: busy }) => {
+      setOnlineUserIds(online || []);
+      setBusyUserIds(busy || []);
     });
 
-    instance.on("presence:update", ({ onlineUserIds: ids }) => {
-      setOnlineUserIds(ids || []);
+    instance.on("presence:update", ({ onlineUserIds: online, busyUserIds: busy }) => {
+      setOnlineUserIds(online || []);
+      setBusyUserIds(busy || []);
     });
 
     setSocket(instance);
@@ -54,12 +60,13 @@ export function SocketProvider({ children }) {
       setSocket(null);
       setIsSocketConnected(false);
       setOnlineUserIds([]);
+      setBusyUserIds([]);
     };
   }, [token]);
 
   const value = useMemo(
-    () => ({ socket, onlineUserIds, isSocketConnected }),
-    [socket, onlineUserIds, isSocketConnected]
+    () => ({ socket, onlineUserIds, busyUserIds, isSocketConnected }),
+    [socket, onlineUserIds, busyUserIds, isSocketConnected]
   );
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;

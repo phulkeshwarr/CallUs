@@ -7,6 +7,7 @@ import {
   findUserCallIds,
   getCallSession,
   getOnlineUserIds,
+  getBusyUserIds,
   getUserSocketIds,
   isUserOnline,
   setCallSession,
@@ -16,7 +17,10 @@ import {
 import { User } from "../models/User.js";
 
 function emitPresence(io) {
-  io.emit("presence:update", { onlineUserIds: Array.from(getOnlineUserIds()) });
+  io.emit("presence:update", {
+    onlineUserIds: Array.from(getOnlineUserIds()),
+    busyUserIds: Array.from(getBusyUserIds()),
+  });
 }
 
 function emitToUser(io, userId, event, payload) {
@@ -54,7 +58,7 @@ export function setupSocket(httpServer) {
   io.on("connection", async (socket) => {
     const userId = socket.userId;
 
-    const user = await User.findById(userId).select("name email");
+    const user = await User.findById(userId).select("name email country userId");
     if (!user) {
       socket.disconnect();
       return;
@@ -64,7 +68,12 @@ export function setupSocket(httpServer) {
     setUserOnline(userId, socket.id);
     emitPresence(io);
 
-    socket.emit("presence:bootstrap", { onlineUserIds: Array.from(getOnlineUserIds()) });
+    socket.emit("presence:bootstrap", {
+      onlineUserIds: Array.from(getOnlineUserIds()),
+      busyUserIds: Array.from(getBusyUserIds()),
+    });
+
+    // ── Call events ──────────────────────────────────────────────
 
     socket.on("call:initiate", ({ to, offer, callType = "video" }, ack) => {
       if (!to || !offer) {
@@ -77,6 +86,12 @@ export function setupSocket(httpServer) {
         return;
       }
 
+      const busySet = getBusyUserIds();
+      if (busySet.has(to)) {
+        ack?.({ ok: false, message: "User is busy in another call" });
+        return;
+      }
+
       const callId = uuidv4();
       setCallSession(callId, {
         id: callId,
@@ -86,13 +101,15 @@ export function setupSocket(httpServer) {
         callType,
         createdAt: Date.now(),
       });
+      emitPresence(io); // Update busy status
 
       emitToUser(io, to, "call:incoming", {
         callId,
         from: {
           _id: user._id,
           name: user.name,
-          email: user.email,
+          country: user.country,
+          userId: user.userId,
         },
         offer,
         callType,
@@ -121,6 +138,7 @@ export function setupSocket(httpServer) {
 
       emitToUser(io, session.from, "call:rejected", { callId, reason });
       deleteCallSession(callId);
+      emitPresence(io); // Update busy status
     });
 
     socket.on("call:ice-candidate", ({ callId, candidate }) => {
@@ -146,7 +164,44 @@ export function setupSocket(httpServer) {
       const targetUserId = session.from === userId ? session.to : session.from;
       emitToUser(io, targetUserId, "call:ended", { callId });
       deleteCallSession(callId);
+      emitPresence(io); // Update busy status
     });
+
+    // ── Chat events ──────────────────────────────────────────────
+
+    socket.on("chat:send", ({ to, text }) => {
+      if (!to || !text || typeof text !== "string") return;
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      const message = {
+        id: uuidv4(),
+        from: {
+          _id: user._id.toString(),
+          name: user.name,
+          country: user.country,
+          userId: user.userId,
+        },
+        text: trimmed,
+        timestamp: Date.now(),
+      };
+
+      // Send to recipient
+      emitToUser(io, to, "chat:receive", message);
+      // Echo back to sender for confirmation
+      socket.emit("chat:receive", { ...message, isSelf: true });
+    });
+
+    socket.on("chat:typing", ({ to, isTyping }) => {
+      if (!to) return;
+      emitToUser(io, to, "chat:typing", {
+        from: user._id.toString(),
+        fromUserId: user.userId,
+        isTyping: !!isTyping,
+      });
+    });
+
+    // ── Disconnect ───────────────────────────────────────────────
 
     socket.on("disconnect", () => {
       const userCallIds = findUserCallIds(userId);
@@ -161,7 +216,7 @@ export function setupSocket(httpServer) {
       });
 
       setUserOfflineSocket(userId, socket.id);
-      emitPresence(io);
+      emitPresence(io); // Updates both online and busy
     });
   });
 

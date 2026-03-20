@@ -5,6 +5,7 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
 import { CallProvider } from "./context/CallContext";
+import { ChatProvider } from "./context/ChatContext";
 import "./styles/main.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -12,9 +13,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <SocketProvider>
-          <CallProvider>
-            <App />
-          </CallProvider>
+          <ChatProvider>
+            <CallProvider>
+              <App />
+            </CallProvider>
+          </ChatProvider>
         </SocketProvider>
       </AuthProvider>
     </BrowserRouter>

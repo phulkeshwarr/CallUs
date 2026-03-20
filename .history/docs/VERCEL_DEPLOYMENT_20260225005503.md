@@ -23,10 +23,9 @@ PORT=5000
 MONGO_URI=<your-mongodb-uri>
 JWT_SECRET=<your-strong-secret>
 JWT_EXPIRES_IN=7d
-CLIENT_URL=https://frontend-git-main-phulkeshwar-mahtos-projects-dc98ca4b.vercel.app
-
-CLIENT_URLS=https://frontend-git-main-phulkeshwar-mahtos-projects-dc98ca4b.vercel.app,https://*.vercel.app
-
+CLIENT_URL=frontend-git-main-phulkeshwar-mahtos-projects-dc98ca4b.vercel.app
+CLIENT_URLS
+```
 
 Remove these from backend env if present:
 

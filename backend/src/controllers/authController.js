@@ -1,14 +1,25 @@
 import { User } from "../models/User.js";
 import { signToken } from "../services/tokenService.js";
 
+function safeUser(user) {
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    country: user.country,
+    userId: user.userId,
+  };
+}
+
 export async function register(req, res) {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, country } = req.body;
     const normalizedEmail = email?.trim().toLowerCase();
     const normalizedName = name?.trim();
+    const normalizedCountry = country?.trim();
 
-    if (!normalizedName || !normalizedEmail || !password) {
-      return res.status(400).json({ message: "Name, email, and password are required" });
+    if (!normalizedName || !normalizedEmail || !password || !normalizedCountry) {
+      return res.status(400).json({ message: "Name, email, password, and country are required" });
     }
 
     const exists = await User.findOne({ email: normalizedEmail });
@@ -20,16 +31,13 @@ export async function register(req, res) {
       name: normalizedName,
       email: normalizedEmail,
       password,
+      country: normalizedCountry,
     });
     const token = signToken(user._id.toString());
 
     return res.status(201).json({
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: safeUser(user),
     });
   } catch (error) {
     if (error?.code === 11000) {
@@ -67,11 +75,7 @@ export async function login(req, res) {
 
     return res.json({
       token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: safeUser(user),
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -80,5 +84,5 @@ export async function login(req, res) {
 }
 
 export async function me(req, res) {
-  return res.json({ user: req.user });
+  return res.json({ user: safeUser(req.user) });
 }
