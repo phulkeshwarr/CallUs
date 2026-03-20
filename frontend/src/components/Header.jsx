@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getCountryFlag } from "../data/countries";
+import { CountryFlag } from "./CountryFlag";
 
 export function Header() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export function Header() {
     });
   }
 
-  const flag = user?.country ? getCountryFlag(user.country) : "🌍";
+  const flag = <CountryFlag countryName={user?.country} />;
 
   return (
     <header className="header">

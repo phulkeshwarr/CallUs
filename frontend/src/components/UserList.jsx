@@ -4,7 +4,7 @@ import { useSocket } from "../context/SocketContext";
 import { useCall } from "../context/CallContext";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
-import { getCountryFlag } from "../data/countries";
+import { CountryFlag } from "./CountryFlag";
 
 export function UserList() {
   const [users, setUsers] = useState([]);
@@ -67,7 +67,7 @@ export function UserList() {
       name: user.name,
       country: user.country,
       userId: user.userId,
-      flag: getCountryFlag(user.country),
+      flag: <CountryFlag countryName={user.country} />,
     });
   }
 
@@ -103,7 +103,7 @@ export function UserList() {
       )}
 
       {sortedUsers.map((user) => {
-        const flag = getCountryFlag(user.country);
+        const flag = <CountryFlag countryName={user.country} />;
         const unread = getUnread(user._id);
         const dotColor = getStatusDotColor(user);
         const canCall = user.isAvailable && callState === "idle" && isSocketConnected;

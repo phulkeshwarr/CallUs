@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
-import { getCountryFlag } from "../data/countries";
+import { CountryFlag } from "../components/CountryFlag";
 
 export function ChatLinkPage() {
   const { userId: targetUserId } = useParams();
@@ -40,7 +40,7 @@ export function ChatLinkPage() {
       name: targetUser.name,
       country: targetUser.country,
       userId: targetUser.userId,
-      flag: getCountryFlag(targetUser.country),
+      flag: <CountryFlag countryName={targetUser.country} />,
     });
     navigate("/");
   }
@@ -65,7 +65,7 @@ export function ChatLinkPage() {
     );
   }
 
-  const flag = targetUser?.country ? getCountryFlag(targetUser.country) : "🌍";
+  const flag = <CountryFlag countryName={targetUser?.country} />;
 
   return (
     <main className="chat-link-page">

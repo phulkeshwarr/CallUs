@@ -195,10 +195,7 @@ a:hover { color: var(--text-primary); }
 .auth-card .auth-brand h1 {
   font-size: 2rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
   letter-spacing: -0.5px;
 }
 .auth-card .auth-brand p {
@@ -283,11 +280,11 @@ a:hover { color: var(--text-primary); }
 .header h1 {
   font-size: 1.3rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--accent);
   letter-spacing: -0.5px;
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .header-right {

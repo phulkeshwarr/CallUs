@@ -1,4 +1,5 @@
 import { useCall } from "../context/CallContext";
+import { CountryFlag } from "./CountryFlag";
 
 export function IncomingCallModal() {
   const { incomingCall, acceptCall, rejectCall } = useCall();
@@ -17,7 +18,7 @@ export function IncomingCallModal() {
         <h3>Incoming {incomingCall.callType} call</h3>
 
         <div className="caller-info">
-          <span>{incomingCall.from?.country ? "🌍" : ""}</span>
+          <span>{incomingCall.from?.country ? <CountryFlag countryName={incomingCall.from.country} /> : ""}</span>
           <span>{incomingCall.from.name}</span>
           {incomingCall.from.userId && (
             <span className="caller-id">#{incomingCall.from.userId}</span>
