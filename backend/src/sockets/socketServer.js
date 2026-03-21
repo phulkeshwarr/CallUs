@@ -16,11 +16,17 @@ import {
 } from "./socketState.js";
 import { User } from "../models/User.js";
 
+// Add this at the top of socketServer.js
+let presenceTimer = null;
 function emitPresence(io) {
-  io.emit("presence:update", {
-    onlineUserIds: Array.from(getOnlineUserIds()),
-    busyUserIds: Array.from(getBusyUserIds()),
-  });
+  if (presenceTimer) return; // skip if already scheduled
+  presenceTimer = setTimeout(() => {
+    io.emit("presence:update", {
+      onlineUserIds: Array.from(getOnlineUserIds()),
+      busyUserIds: Array.from(getBusyUserIds()),
+    });
+    presenceTimer = null;
+  }, 500); // max 2 broadcasts/second instead of 20+
 }
 
 function emitToUser(io, userId, event, payload) {
@@ -41,7 +47,7 @@ export function setupSocket(httpServer) {
     },
   });
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token;
       if (!token) {
@@ -49,20 +55,21 @@ export function setupSocket(httpServer) {
       }
       const decoded = verifyToken(token);
       socket.userId = decoded.userId;
+      socket.user = await User.findById(decoded.userId).select("name email country userId").lean();
+      
+      if (!socket.user) {
+        return next(new Error("User not found"));
+      }
+      
       return next();
     } catch (error) {
       return next(new Error("Unauthorized"));
     }
   });
 
-  io.on("connection", async (socket) => {
+  io.on("connection", (socket) => {
     const userId = socket.userId;
-
-    const user = await User.findById(userId).select("name email country userId");
-    if (!user) {
-      socket.disconnect();
-      return;
-    }
+    const user = socket.user;
 
     socket.join(`user:${userId}`);
     setUserOnline(userId, socket.id);
