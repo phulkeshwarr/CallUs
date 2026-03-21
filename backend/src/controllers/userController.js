@@ -3,7 +3,7 @@ import { getOnlineUserIds } from "../sockets/socketState.js";
 
 export async function listUsers(req, res) {
   const users = await User.find({ _id: { $ne: req.user._id } }).select("name email country userId createdAt");
-  const onlineIds = getOnlineUserIds();
+  const onlineIds = await getOnlineUserIds();
 
   const payload = users.map((user) => ({
     _id: user._id,
@@ -12,7 +12,7 @@ export async function listUsers(req, res) {
     country: user.country,
     userId: user.userId,
     createdAt: user.createdAt,
-    isOnline: onlineIds.has(user._id.toString()),
+    isOnline: onlineIds.includes(user._id.toString()),
   }));
 
   return res.json({ users: payload });
@@ -29,14 +29,14 @@ export async function lookupByUserId(req, res) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  const onlineIds = getOnlineUserIds();
+  const onlineIds = await getOnlineUserIds();
   return res.json({
     user: {
       _id: user._id,
       name: user.name,
       country: user.country,
       userId: user.userId,
-      isOnline: onlineIds.has(user._id.toString()),
+      isOnline: onlineIds.includes(user._id.toString()),
     },
   });
 }
