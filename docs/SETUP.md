@@ -66,6 +66,7 @@ call.io/
 ### Prerequisites
 - Node.js 18+
 - MongoDB running locally (or MongoDB Atlas URI)
+- Redis is optional. If `REDIS_URL` is not set, realtime state uses in-memory fallback.
 
 ### Backend
 ```bash
@@ -95,6 +96,8 @@ Open `http://localhost:5173`.
 - `JWT_EXPIRES_IN=7d`
 - `CLIENT_URL=http://localhost:5173`
 - `CLIENT_URLS=http://localhost:5173,http://127.0.0.1:5173`
+- `REDIS_URL=` optional
+- `REDIS_KEY_PREFIX=callus` optional
 
 ### frontend/.env
 - `VITE_API_URL=http://localhost:5000/api`

@@ -1,12 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSocket } from "./SocketContext";
-import { useAuth } from "./AuthContext";
 
 const ChatContext = createContext(null);
 
 export function ChatProvider({ children }) {
   const { socket } = useSocket();
-  const { user } = useAuth();
 
   // activeChat: { _id, name, country, userId } or null
   const [activeChat, setActiveChat] = useState(null);
@@ -114,22 +112,27 @@ export function ChatProvider({ children }) {
     });
   }, []);
 
-  // Socket event listeners
-  useState(() => {
-    // This runs once on mount
-  });
-
-  // Attach socket listeners
-  const socketRef = useRef(null);
-  if (socket && socket !== socketRef.current) {
-    if (socketRef.current) {
-      socketRef.current.off("chat:receive", handleReceive);
-      socketRef.current.off("chat:typing", handleTyping);
+  useEffect(() => {
+    if (!socket) {
+      return undefined;
     }
+
     socket.on("chat:receive", handleReceive);
     socket.on("chat:typing", handleTyping);
-    socketRef.current = socket;
-  }
+
+    return () => {
+      socket.off("chat:receive", handleReceive);
+      socket.off("chat:typing", handleTyping);
+    };
+  }, [socket, handleReceive, handleTyping]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(typingTimeoutRef.current).forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+    };
+  }, []);
 
   const getMessages = useCallback(
     (peerId) => messagesMap[peerId] || [],

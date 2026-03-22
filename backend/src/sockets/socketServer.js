@@ -15,7 +15,7 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import { v4 as uuidv4 } from "uuid";
 import { isAllowedOrigin } from "../config/cors.js";
 import { verifyToken } from "../services/tokenService.js";
-import { getRedisPubSub } from "../config/redis.js";
+import { getRedisPubSub, isRedisEnabled } from "../config/redis.js";
 import { User } from "../models/User.js";
 import {
   deleteCallSession,
@@ -69,9 +69,12 @@ export function setupSocket(httpServer) {
     },
   });
 
-  // Attach the Redis adapter so all instances share one pub/sub bus
-  const [pubClient, subClient] = getRedisPubSub();
-  io.adapter(createAdapter(pubClient, subClient));
+  if (isRedisEnabled()) {
+    const [pubClient, subClient] = getRedisPubSub();
+    io.adapter(createAdapter(pubClient, subClient));
+  } else {
+    console.warn("Socket.IO Redis adapter disabled. Using single-instance mode.");
+  }
 
   // ── Auth middleware ────────────────────────────────────────────────────────
   // Fetch & cache the User document here — once per connection — so

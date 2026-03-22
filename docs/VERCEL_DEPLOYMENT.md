@@ -1,21 +1,21 @@
-# Vercel Deployment Guide (Frontend) + Render Deployment Guide (Backend)
+# Vercel Deployment Guide
 
 Deploy this project in 2 parts:
 
-- Frontend (`frontend`) -> Vercel
-- Backend (`backend`) -> Render
+- Frontend (`frontend`) on Vercel
+- Backend (`backend`) on Render
 
-Do not deploy backend to Vercel for this app. Socket.IO signaling needs a long-running Node server.
+Do not deploy the backend to Vercel for this app. Socket.IO signaling needs a long-running Node server.
 
-## 1. Deploy backend on Render
+## Backend on Render
 
-Create a **Web Service** and set:
+Create a Render Web Service with:
 
 - Root Directory: `backend`
 - Build Command: `npm install`
 - Start Command: `npm start`
 
-Set these environment variables in Render:
+Set these environment variables:
 
 ```env
 NODE_ENV=production
@@ -24,28 +24,29 @@ MONGO_URI=<your-mongodb-uri>
 JWT_SECRET=<your-strong-secret>
 JWT_EXPIRES_IN=7d
 CLIENT_URL=https://frontend-git-main-phulkeshwar-mahtos-projects-dc98ca4b.vercel.app
-
 CLIENT_URLS=https://frontend-git-main-phulkeshwar-mahtos-projects-dc98ca4b.vercel.app,https://*.vercel.app
+REDIS_URL=<optional>
+REDIS_KEY_PREFIX=callus
+```
 
+Notes:
 
-Remove these from backend env if present:
+- `REDIS_URL` is optional. If it is missing, the backend now falls back to single-instance in-memory realtime state.
+- Remove frontend-only variables from Render if they exist: `VITE_API_URL`, `VITE_SOCKET_URL`.
 
-- `VITE_API_URL`
-- `VITE_SOCKET_URL`
-
-Backend health check:
+Health check:
 
 `https://callus-pgo1.onrender.com/api/health`
 
-Expected:
+Expected response:
 
 ```json
 {"status":"ok"}
 ```
 
-## 2. Deploy frontend on Vercel
+## Frontend on Vercel
 
-Create Vercel project with:
+Create a Vercel project with:
 
 - Framework: `Vite`
 - Root Directory: `frontend`
@@ -53,45 +54,44 @@ Create Vercel project with:
 - Build Command: `npm run build`
 - Output Directory: `dist`
 
-Set frontend environment variables in Vercel:
+Set these Vercel environment variables:
 
 ```env
 VITE_API_URL=https://callus-pgo1.onrender.com/api
 VITE_SOCKET_URL=https://callus-pgo1.onrender.com
 ```
 
-Redeploy frontend after saving env vars.
+Redeploy frontend after saving the variables.
 
-## 3. Correct deployment order
+## Recommended order
 
 1. Deploy backend on Render.
-2. Confirm backend health URL works.
-3. Set Vercel env vars to Render backend URL.
+2. Confirm the health URL works.
+3. Set Vercel env vars to the Render backend URL.
 4. Deploy frontend on Vercel.
-5. Ensure Render `CLIENT_URL` and `CLIENT_URLS` point to your Vercel domain.
-6. Redeploy backend once after URL changes.
+5. If frontend URL changes, update `CLIENT_URL` and `CLIENT_URLS` in Render and redeploy backend.
 
-## 4. Post-deploy testing
+## Post-deploy checks
 
-1. Open `https://frontend-red-nine-77.vercel.app`.
-2. Login with two different users in two browser sessions.
+1. Open the frontend URL.
+2. Register or log in with two different users.
 3. Confirm both users show `Online`.
 4. Test audio call.
 5. Test video call.
 
-## 5. Common errors
+## Common issues
 
 - `FUNCTION_INVOCATION_FAILED` on Vercel:
-  - backend was deployed to Vercel instead of Render.
+  - the backend was deployed to Vercel instead of Render.
 - `Missing required environment variable: CLIENT_URL` on Render:
-  - `CLIENT_URL` not set.
+  - `CLIENT_URL` is missing from Render env vars.
+- `Not allowed by CORS`:
+  - `CLIENT_URL` or `CLIENT_URLS` does not include the exact frontend origin.
 - `Realtime connection unavailable`:
-  - wrong `VITE_SOCKET_URL` or backend is down.
-- API 401 loops:
-  - stale token in browser storage; logout/login again.
+  - `VITE_SOCKET_URL` is wrong or backend is down.
 
-## 6. References
+## References
 
-- Vercel + Vite: https://vercel.com/docs/frameworks/frontend/vite
-- Vercel env vars: https://vercel.com/docs/environment-variables
+- Vercel Vite docs: https://vercel.com/docs/frameworks/frontend/vite
+- Vercel environment variables: https://vercel.com/docs/environment-variables
 - Render web services: https://render.com/docs/web-services
